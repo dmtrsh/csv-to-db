@@ -45,5 +45,5 @@
       </HBox>
    </children>
     <Button fx:id="okButton" minWidth="-Infinity" mnemonicParsing="false"
-            onAction="#closePopup" text="Load into DB" />
+            onAction="#closePopup" text="Ok." visible="false" />
 </AnchorPane>

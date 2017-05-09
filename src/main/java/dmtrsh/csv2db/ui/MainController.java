@@ -27,6 +27,7 @@ import javafx.util.StringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 
 import javax.annotation.PostConstruct;
@@ -54,7 +55,6 @@ public class MainController {
     @FXML private TableView<ViewEntity> table;
     @FXML private TextField tableName;
     @FXML private MenuItem openFileButton;
-    @FXML private Button loadIntoDb;
     @FXML private Button okButton;
     @FXML private TableColumn<ViewEntity, String> csvName;
     @FXML private TableColumn<ViewEntity, String> dbName;
@@ -62,7 +62,13 @@ public class MainController {
     private Stage dialogStage;
     private List<CsvRow> csvRows;
     private EntityMapping entityMapping;
-    private String[] inappropriateSymbols = {" ", "/", "#", "-", "!", "&", "$", "%", "'", "(", ")", "\n", "\t"};
+    private String[] inappropriateSymbols = {" ", "/", "#", "-", "+", "=", ",", "+", "!", "&", "$", "|", "\\", "*",
+                                                "%", "'", "(", ")", "\n", "\t"};
+
+    @Value(value = "${sql.reserved.words}")
+    private String inappropriateWordsProperty;
+
+    private List<String> inappropriateWords;
     private ObservableList<ViewEntity> data;
 
     @FXML
@@ -72,6 +78,7 @@ public class MainController {
     @SuppressWarnings("unchecked")
     @PostConstruct
     public void init() {
+        inappropriateWords = Arrays.asList(inappropriateWordsProperty.split(","));
         data = FXCollections.observableArrayList(new HashSet<ViewEntity>());
         csvName.setCellValueFactory(new PropertyValueFactory<>("csvName"));
         dbName.setCellValueFactory(new PropertyValueFactory<>("dbName"));
@@ -123,6 +130,8 @@ public class MainController {
     @FXML
     private void loadIntoDb(){
         if(!checkTableNameIsOk()) return;
+        if(!checkColumnName()) return;
+        if (table.getItems().size() == 0) return;
         String columnsWithTypes = table.getItems()
                 .stream()
                 .map(item -> dbName.getCellObservableValue(item).getValue())
@@ -139,7 +148,6 @@ public class MainController {
         this.tableName.clear();
         table.getItems().clear();
     }
-
 
     @FXML
     private void changeCellValue(TableColumn.CellEditEvent<ViewEntity, String> event) {
@@ -192,6 +200,7 @@ public class MainController {
     private void showPopup(String msg){
         dialogStage = new Stage();
         dialogStage.initModality(Modality.WINDOW_MODAL);
+        okButton.setVisible(true);
         VBox vbox = new VBox(new Text(msg), okButton);
         vbox.setAlignment(Pos.CENTER);
         vbox.setPadding(new Insets(15));
@@ -202,6 +211,7 @@ public class MainController {
     @FXML
     public void closePopup() {
         dialogStage.close();
+        okButton.setVisible(false);
     }
 
     private boolean checkTableNameIsOk() {
@@ -212,8 +222,10 @@ public class MainController {
             showPopup("Table name should not be empty");
             return false;
         } else if (tableNameHasInappropriateSymbols()){
-            showPopup("Table name should non contain:\n"
-                    + Arrays.toString(inappropriateSymbols));
+            showPopup("Table name should contain only alphabetical symbols or '_'");
+            return false;
+        }else if (isTableNameReserved()){
+            showPopup("Table name should not be a reserved word!");
             return false;
         }
         return true;
@@ -231,6 +243,43 @@ public class MainController {
         String actualTableName = tableName.getText();
         return Arrays.stream(inappropriateSymbols)
                         .anyMatch(actualTableName::contains);
+    }
+
+    private boolean isTableNameReserved() {
+        String actualTableName = tableName.getText().toUpperCase();
+        return inappropriateWords.stream()
+                .anyMatch(actualTableName::equals);
+    }
+
+    private boolean checkColumnName() {
+        if (isReserved()){
+            showPopup("Column name should not be a reserved word!");
+            return false;
+        } else if (columnNameHasInappropriateSymbols()){
+            showPopup("Column name should contain only alphabetical symbols or '_'.");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isReserved() {
+        List<String> dbColumns = table.getItems()
+                .stream()
+                .map(item -> dbName.getCellObservableValue(item).getValue())
+                .collect(Collectors.toList());
+        return dbColumns.stream()
+                .peek(String::toUpperCase)
+                .anyMatch(inappropriateWords::contains);
+    }
+
+    private boolean columnNameHasInappropriateSymbols(){
+        List<String> dbColumns = table.getItems()
+                .stream()
+                .map(item -> dbName.getCellObservableValue(item).getValue())
+                .collect(Collectors.toList());
+        return Arrays.stream(inappropriateSymbols)
+                .anyMatch(s -> dbColumns.stream()
+                        .anyMatch(dbColumn -> dbColumn.contains(s)));
     }
 
 }
