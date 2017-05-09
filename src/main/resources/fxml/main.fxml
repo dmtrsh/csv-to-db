@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity"
+            prefHeight="300.0" prefWidth="405.0"
+            xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="dmtrsh.csv2db.ui.MainController">
+    <MenuBar id="menuBar" prefWidth="50.0">
+        <menus>
+            <Menu text="File">
+                <items>
+                    <MenuItem fx:id="openFileButton" onAction="#openAction" text="Open CSV file"/>
+                    <SeparatorMenuItem />
+                    <MenuItem text="Exit" onAction="#processExit" />
+                </items>
+            </Menu>
+        </menus>
+    </MenuBar>
+    <MenuBar prefWidth="355.0"/>
+    <children>
+      <TableView fx:id="table" editable="true"
+                 prefHeight="200.0" prefWidth="405.0" tableMenuButtonVisible="true"
+                 AnchorPane.bottomAnchor="50.0" AnchorPane.leftAnchor="0.0"
+                 AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="25.0">
+          <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY" /></columnResizePolicy>
+          <columns>
+              <TableColumn fx:id="csvName" text="csvName" prefWidth="100"/>
+              <TableColumn fx:id="dbName" text="dbName" prefWidth="100" onEditCommit="#changeCellValue"/>
+          </columns>
+      </TableView>
+      <HBox alignment="CENTER_LEFT" layoutX="21.0" layoutY="207.0" prefHeight="50.0" prefWidth="300.0"
+            AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0">
+         <children>
+            <!--<Label fx:id="tableName" text="Table name: "/>-->
+            <TextField fx:id="tableName" promptText="Table Name">
+               <HBox.margin>
+                  <Insets right="3.0" />
+               </HBox.margin>
+            </TextField>
+            <Button fx:id="loadIntoDb" minWidth="-Infinity" mnemonicParsing="false"
+                    onAction="#loadIntoDb" text="Load into DB" />
+         </children>
+      </HBox>
+   </children>
+    <Button fx:id="okButton" minWidth="-Infinity" mnemonicParsing="false"
+            onAction="#closePopup" text="Load into DB" />
+</AnchorPane>
