@@ -8,6 +8,7 @@ import dmtrsh.csv2db.csv.CsvRow;
 import dmtrsh.csv2db.mapping.ColumnMapping;
 import dmtrsh.csv2db.mapping.EntityMapping;
 import dmtrsh.csv2db.repository.Repo;
+import dmtrsh.csv2db.validator.Validator;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -45,6 +46,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.sun.xml.internal.fastinfoset.alphabet.BuiltInRestrictedAlphabets.table;
+
 public class MainController {
 
     private Logger logger = LoggerFactory.getLogger(MainController.class);
@@ -58,6 +61,9 @@ public class MainController {
     @FXML private Button okButton;
     @FXML private TableColumn<ViewEntity, String> csvName;
     @FXML private TableColumn<ViewEntity, String> dbName;
+
+    @Autowired
+    Validator validator;
 
     private Stage dialogStage;
     private List<CsvRow> csvRows;
@@ -147,6 +153,7 @@ public class MainController {
         saveToJson();
         this.tableName.clear();
         table.getItems().clear();
+        showPopup("You file has been successfully inserted to the database.");
     }
 
     @FXML
@@ -215,71 +222,34 @@ public class MainController {
     }
 
     private boolean checkTableNameIsOk() {
-        if (tableNameIsTooBig()){
+        if (validator.tableNameIsTooBig(tableName.getText())){
             showPopup("Table name should be less than 30 symbols");
             return false;
-        } else if (tableNameIsEmpty()){
+        } else if (validator.tableNameIsEmpty(tableName.getText())){
             showPopup("Table name should not be empty");
             return false;
-        } else if (tableNameHasInappropriateSymbols()){
+        } else if (validator.tableNameHasInappropriateSymbols(tableName.getText(), inappropriateSymbols)){
             showPopup("Table name should contain only alphabetical symbols or '_'");
             return false;
-        }else if (isTableNameReserved()){
+        }else if (validator.isTableNameReserved(tableName.getText(), inappropriateWords)){
             showPopup("Table name should not be a reserved word!");
             return false;
         }
         return true;
     }
 
-    private boolean tableNameIsTooBig(){
-        return tableName.getText().length() > 30;
-    }
-
-    private boolean tableNameIsEmpty(){
-        return tableName.getText().length() < 1;
-    }
-
-    private boolean tableNameHasInappropriateSymbols(){
-        String actualTableName = tableName.getText();
-        return Arrays.stream(inappropriateSymbols)
-                        .anyMatch(actualTableName::contains);
-    }
-
-    private boolean isTableNameReserved() {
-        String actualTableName = tableName.getText().toUpperCase();
-        return inappropriateWords.stream()
-                .anyMatch(actualTableName::equals);
-    }
-
     private boolean checkColumnName() {
-        if (isReserved()){
+        List<String> dbColumns = table.getItems()
+                .stream()
+                .map(item -> dbName.getCellObservableValue(item).getValue())
+                .collect(Collectors.toList());
+        if (validator.isReserved(dbColumns, inappropriateWords)){
             showPopup("Column name should not be a reserved word!");
             return false;
-        } else if (columnNameHasInappropriateSymbols()){
+        } else if (validator.columnNameHasInappropriateSymbols(dbColumns, inappropriateSymbols)){
             showPopup("Column name should contain only alphabetical symbols or '_'.");
             return false;
         }
         return true;
     }
-
-    private boolean isReserved() {
-        List<String> dbColumns = table.getItems()
-                .stream()
-                .map(item -> dbName.getCellObservableValue(item).getValue())
-                .collect(Collectors.toList());
-        return dbColumns.stream()
-                .peek(String::toUpperCase)
-                .anyMatch(inappropriateWords::contains);
-    }
-
-    private boolean columnNameHasInappropriateSymbols(){
-        List<String> dbColumns = table.getItems()
-                .stream()
-                .map(item -> dbName.getCellObservableValue(item).getValue())
-                .collect(Collectors.toList());
-        return Arrays.stream(inappropriateSymbols)
-                .anyMatch(s -> dbColumns.stream()
-                        .anyMatch(dbColumn -> dbColumn.contains(s)));
-    }
-
 }

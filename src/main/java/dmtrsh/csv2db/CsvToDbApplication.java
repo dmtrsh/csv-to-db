@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Lazy;
 
-@Lazy
 @SpringBootApplication
 public class CsvToDbApplication extends AbstractJavaFxApplicationSupport{
 
