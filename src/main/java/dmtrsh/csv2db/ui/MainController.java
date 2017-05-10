@@ -28,7 +28,6 @@ import javafx.util.StringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 
 import javax.annotation.PostConstruct;
@@ -40,13 +39,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static com.sun.xml.internal.fastinfoset.alphabet.BuiltInRestrictedAlphabets.table;
 
 public class MainController {
 
@@ -68,13 +64,9 @@ public class MainController {
     private Stage dialogStage;
     private List<CsvRow> csvRows;
     private EntityMapping entityMapping;
-    private String[] inappropriateSymbols = {" ", "/", "#", "-", "+", "=", ",", "+", "!", "&", "$", "|", "\\", "*",
-                                                "%", "'", "(", ")", "\n", "\t"};
 
-    @Value(value = "${sql.reserved.words}")
-    private String inappropriateWordsProperty;
 
-    private List<String> inappropriateWords;
+
     private ObservableList<ViewEntity> data;
 
     @FXML
@@ -84,7 +76,6 @@ public class MainController {
     @SuppressWarnings("unchecked")
     @PostConstruct
     public void init() {
-        inappropriateWords = Arrays.asList(inappropriateWordsProperty.split(","));
         data = FXCollections.observableArrayList(new HashSet<ViewEntity>());
         csvName.setCellValueFactory(new PropertyValueFactory<>("csvName"));
         dbName.setCellValueFactory(new PropertyValueFactory<>("dbName"));
@@ -222,16 +213,16 @@ public class MainController {
     }
 
     private boolean checkTableNameIsOk() {
-        if (validator.tableNameIsTooBig(tableName.getText())){
+        if (validator.isTooBig(tableName.getText())){
             showPopup("Table name should be less than 30 symbols");
             return false;
-        } else if (validator.tableNameIsEmpty(tableName.getText())){
+        } else if (validator.isEmpty(tableName.getText())){
             showPopup("Table name should not be empty");
             return false;
-        } else if (validator.tableNameHasInappropriateSymbols(tableName.getText(), inappropriateSymbols)){
+        } else if (validator.hasInappropriateSymbols(tableName.getText())){
             showPopup("Table name should contain only alphabetical symbols or '_'");
             return false;
-        }else if (validator.isTableNameReserved(tableName.getText(), inappropriateWords)){
+        }else if (validator.isReserved(tableName.getText())){
             showPopup("Table name should not be a reserved word!");
             return false;
         }
@@ -243,10 +234,16 @@ public class MainController {
                 .stream()
                 .map(item -> dbName.getCellObservableValue(item).getValue())
                 .collect(Collectors.toList());
-        if (validator.isReserved(dbColumns, inappropriateWords)){
+        if (validator.isTooBig(dbColumns)){
+            showPopup("Column name should be less than 30 symbols");
+            return false;
+        } else if (validator.isEmpty(dbColumns)) {
+            showPopup("Column name should not be empty");
+            return false;
+        } else if (validator.isReserved(dbColumns)){
             showPopup("Column name should not be a reserved word!");
             return false;
-        } else if (validator.columnNameHasInappropriateSymbols(dbColumns, inappropriateSymbols)){
+        } else if (validator.hasInappropriateSymbols(dbColumns)){
             showPopup("Column name should contain only alphabetical symbols or '_'.");
             return false;
         }
