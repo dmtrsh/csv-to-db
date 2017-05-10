@@ -59,7 +59,9 @@ public class MainController {
     @FXML private TableColumn<ViewEntity, String> dbName;
 
     @Autowired
-    Validator validator;
+    private Validator validator;
+    @Autowired
+    private CSVReader csvReader;
 
     private Stage dialogStage;
     private List<CsvRow> csvRows;
@@ -105,7 +107,7 @@ public class MainController {
             fileChooser.getExtensionFilters().add(extFilter);
             File file = fileChooser.showOpenDialog(table.getScene().getWindow());
             if(file == null) return;
-            List<CsvRow> csvFileRows = CSVReader.read(file);
+            List<CsvRow> csvFileRows = csvReader.read(file);
             List<String> header = csvFileRows.get(0).getRow();
             table.getItems().clear();
             header.forEach(h -> {
